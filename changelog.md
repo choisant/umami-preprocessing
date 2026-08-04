@@ -2,6 +2,8 @@
 
 ### [Latest]
 
+### [v0.3.2](https://github.com/umami-hep/umami-preprocessing/releases/tag/v0.3.2) (04.08.2026)
+
 - Add new configs for central dataset [#159](https://github.com/umami-hep/umami-preprocessing/pull/159)
 - Generalise the framework beyond jets to arbitrary global objects [#156](https://github.com/umami-hep/umami-preprocessing/pull/156)
 
