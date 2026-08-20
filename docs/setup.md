@@ -128,6 +128,72 @@ python -m pip install .
     ```
 
 
+### Container image
+
+If you don't want to set up a Python environment at all, you can use the UPP container image.
+The CI builds `gitlab-registry.cern.ch/aft/training-images/upp-images/upp:latest` on every merge to
+`main` and a tagged image `upp:<tag>` (e.g. `upp:v0.3.1`) for every release. The image comes with UPP
+and its command line scripts (`preprocess`, `check_input_samples`, `list_components`) pre-installed.
+
+=== "apptainer"
+
+    On clusters (lxplus, HPC sites), apptainer can run the image directly from the registry:
+
+    ```bash
+    apptainer exec docker://gitlab-registry.cern.ch/aft/training-images/upp-images/upp:latest \
+        preprocess --config <path/to/config.yaml>
+    ```
+
+    The first `docker://` invocation converts the image to apptainer's SIF format, which takes a
+    while. The result is cached (default `~/.apptainer/cache`), so later invocations start quickly
+    and only download again when a new image version is published. If your home quota is small
+    (e.g. on lxplus), point the cache and the conversion scratch space to a larger filesystem:
+
+    ```bash
+    export APPTAINER_CACHEDIR=/path/to/big/storage/apptainer_cache
+    export APPTAINER_TMPDIR=/path/to/big/storage/apptainer_tmp
+    ```
+
+    On machines with CVMFS (lxplus, most HPC sites) the image is also distributed pre-unpacked
+    via [unpacked.cern.ch](https://gitlab.cern.ch/unpacked/sync), which skips the pull and
+    conversion entirely:
+
+    ```bash
+    apptainer exec /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/aft/training-images/upp-images/upp:latest \
+        preprocess --config <path/to/config.yaml>
+    ```
+
+    The release tags are available there as well (e.g. `upp:v0.3.2`).
+
+    By default apptainer shares your home directory and working directory with the container. For a
+    cleaner environment use `--contain` and bind only the paths you need (your input ntuples and
+    output directory) with `-B`, keeping the working directory with `--pwd`:
+
+    ```bash
+    apptainer exec --contain --pwd "$PWD" -B "$PWD" -B /home -B /tmp -B <path/to/data> \
+        <image> preprocess --config <path/to/config.yaml>
+    ```
+
+    where `<image>` is any of the above (`docker://` URL, CVMFS path or local `.sif` file).
+
+=== "docker"
+
+    With docker, mount your working directory and data paths into the container:
+
+    ```bash
+    docker run --rm -it -v $PWD:$PWD -w $PWD \
+        gitlab-registry.cern.ch/aft/training-images/upp-images/upp:latest \
+        preprocess --config <path/to/config.yaml>
+    ```
+
+!!!info "Pin a release tag for production"
+
+    `upp:latest` follows the `main` branch and changes over time. For reproducible production
+    preprocessing, use a tagged release image like `upp:v0.3.1` instead.
+
+For running UPP as batch jobs on Slurm or HTCondor clusters with the container image, see
+[Running on HPC](hpc.md).
+
 ### Run the tests (Optional)
 
 To ensure that the package is working correctly, you can run the tests using the pytest framework. 
